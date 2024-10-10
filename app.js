@@ -1,16 +1,36 @@
-const express = require('express');
-const path = require('path');
-const app = express(); // Initialize the express app
+const express = require('express')
+const app = express()
+const http = require('node:http');
+const path = require('node:path');
+const socketio = require("socket.io") // socketio run in only http server
+const server = http.createServer(app); // create a server
+const io = socketio(server); // like a server ||| socketio server
 
-// Set EJS as the view engine
-app.set('view engine', 'ejs');
 
-// Set up static file directory for public assets
-app.use(express.static(path.join(__dirname, 'public')));
 
-// Route for homepage
-app.get('/', (req, res) => {
-    res.render('index'); // Render the index.ejs file
+app.set("view engine", "ejs"); // view engine setup
+app.use(express.static(path.join(__dirname, "public"))); // static file setup
+
+io.on("connection", function (socket) {
+    console.log(`User connected: ${socket.id}`);
+
+    socket.on("send-location", function (data) {
+        io.emit("recevie-location", { id: socket.id, ...data });
+    });
+
+    socket.on("disconnect", function () {
+        console.log(`User disconnected: ${socket.id}`);
+        io.emit("user-disconnected", socket.id);
+    });
 });
 
-module.exports = app; // Export the app to be used in index.js
+
+
+app.get('/', function (req, res) {
+    res.render("index")
+})
+
+
+server.listen(3000, () => {
+    console.log("Server is running on port 3000");
+});
